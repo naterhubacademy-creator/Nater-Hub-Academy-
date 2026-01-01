@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NATER HUB | Secure Verification</title>
+    <script src="https://unpkg.com/backendless/dist/backendless.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@900&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --red: #d32f2f; --gold: #d4af37; --dark: #0a0a0a; }
+        body { 
+            background: var(--dark); 
+            background-image: radial-gradient(circle at top, #1a1a1a 0%, #000 100%);
+            color: #333; height: 100vh; display: flex; align-items: center; justify-content: center; 
+            font-family: 'Montserrat', sans-serif; margin: 0;
+        }
+        .verify-card { 
+            background: white; padding: 40px 30px; border-radius: 30px; text-align: center; 
+            max-width: 450px; width: 90%; border-top: 10px solid var(--gold); 
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+        }
+        .logo-nater { font-family: 'Cinzel', serif; font-size: 28px; font-weight: 900; color: var(--gold); letter-spacing: 3px; }
+        .logo-hub { font-family: 'Cinzel', serif; font-size: 28px; font-weight: 900; color: var(--red); letter-spacing: 3px; }
+        .status-icon { font-size: 80px; margin: 15px 0; animation: scaleUp 0.5s ease-out; }
+        .verified { color: #28a745; }
+        .unverified { color: #d32f2f; }
+        @keyframes scaleUp { from { transform: scale(0); } to { transform: scale(1); } }
+        
+        .info-box { text-align: left; background: #f9f9f9; padding: 20px; border-radius: 15px; margin-top: 20px; border: 1px solid #eee; }
+        .detail-label { font-size: 10px; text-transform: uppercase; color: #999; font-weight: 800; letter-spacing: 1px; margin-bottom: 2px; }
+        .detail-value { font-size: 15px; font-weight: 700; color: #111; margin-bottom: 12px; border-left: 3px solid var(--gold); padding-left: 10px; }
+        
+        #loading-screen { padding: 40px 0; }
+        .spinner-border { width: 3.5rem; height: 3.5rem; color: var(--red); border-width: 0.35em; }
+
+        /* Manual Search Backup */
+        .manual-box { margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }
+        .manual-input { border-radius: 8px; border: 1px solid #ddd; padding: 10px; font-size: 12px; width: 100%; margin-bottom: 10px; text-align: center; }
+        .manual-btn { background: var(--dark); color: white; border: none; padding: 10px; border-radius: 8px; font-size: 12px; font-weight: bold; width: 100%; }
+        
+        .footer-note { font-size: 10px; color: #aaa; margin-top: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="verify-card">
+    <div class="mb-2">
+        <span class="logo-nater">NATER</span><span class="logo-hub">HUB</span>
+    </div>
+
+    <div id="loading-screen">
+        <div class="spinner-border" role="status"></div>
+        <p class="mt-4 fw-bold text-muted text-uppercase">Authenticating Code...</p>
+    </div>
+    
+    <div id="verify-content" style="display:none;">
+        <div id="status-container"></div>
+        <h2 class="fw-bold mb-1" id="status-title"></h2>
+        <p class="text-muted small mb-4">Official Academy Credential</p>
+
+        <div class="info-box" id="infoBox">
+            <div class="detail-label">Graduate Name</div>
+            <div id="resName" class="detail-value">---</div>
+            
+            <div class="detail-label">Course Completed</div>
+            <div id="resCourse" class="detail-value">---</div>
+            
+            <div class="detail-label">Verification ID</div>
+            <div id="resId" class="detail-value" style="color: var(--red); margin-bottom:0;">---</div>
+        </div>
+
+        <div class="manual-box" id="manualSearch" style="display:none;">
+            <p class="small text-muted mb-2">Check another ID?</p>
+            <input type="text" id="manualId" class="manual-input" placeholder="NH-ID-XXXXXX">
+            <button class="manual-btn" onclick="manualCheck()">VERIFY NOW</button>
+        </div>
+
+        <div class="footer-note text-uppercase">NATER HUB Verification Service</div>
+    </div>
+</div>
+
+<script>
+    const APP_ID = 'F3BC0BA0-2B86-4D32-8828-DDFED2BD7EAF';
+    const JS_KEY = 'F8C339CE-AB50-4F68-83BD-0A73BF97AEDB';
+    Backendless.initApp(APP_ID, JS_KEY);
+
+    async function performVerification(certId) {
+        document.getElementById('loading-screen').style.display = 'block';
+        document.getElementById('verify-content').style.display = 'none';
+        
+        try {
+            if (!certId) {
+                // If no ID is in the URL, show the manual search box immediately
+                showManualOnly();
+                return;
+            }
+
+            const query = Backendless.DataQueryBuilder.create().setWhereClause(`certId = '${certId}'`);
+            const results = await Backendless.Data.of("VerifiedCertificates").find(query);
+
+            // Force a 1.5s delay so the "Authenticating" animation feels real/secure
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.display = 'none';
+                document.getElementById('verify-content').style.display = 'block';
+                document.getElementById('manualSearch').style.display = 'block';
+                
+                const title = document.getElementById('status-title');
+                const container = document.getElementById('status-container');
+
+                if (results && results.length > 0) {
+                    const record = results[0];
+                    container.innerHTML = '<div class="status-icon verified"><i class="fas fa-check-circle"></i></div>';
+                    title.innerText = "VERIFIED";
+                    title.style.color = "#28a745";
+                    
+                    document.getElementById('resName').innerText = record.studentName;
+                    document.getElementById('resCourse').innerText = record.courseName;
+                    document.getElementById('resId').innerText = certId;
+                } else {
+                    handleFailure("ID_NOT_FOUND");
+                }
+            }, 1500);
+
+        } catch (error) {
+            handleFailure("ERROR");
+        }
+    }
+
+    function showManualOnly() {
+        document.getElementById('loading-screen').style.display = 'none';
+        document.getElementById('verify-content').style.display = 'block';
+        document.getElementById('manualSearch').style.display = 'block';
+        document.getElementById('infoBox').style.display = 'none';
+        document.getElementById('status-title').innerText = "Portal Active";
+        document.getElementById('status-container').innerHTML = '<div class="status-icon text-muted"><i class="fas fa-search"></i></div>';
+    }
+
+    function manualCheck() {
+        const id = document.getElementById('manualId').value.trim();
+        if(id) {
+            document.getElementById('infoBox').style.display = 'block';
+            performVerification(id);
+        }
+    }
+
+    function handleFailure(reason) {
+        document.getElementById('loading-screen').style.display = 'none';
+        document.getElementById('verify-content').style.display = 'block';
+        document.getElementById('manualSearch').style.display = 'block';
+        
+        const title = document.getElementById('status-title');
+        title.innerText = "NOT FOUND";
+        title.style.color = "#d32f2f";
+        document.getElementById('status-container').innerHTML = '<div class="status-icon unverified"><i class="fas fa-times-circle"></i></div>';
+        
+        let msg = "ID is invalid or not found in our database.";
+        document.getElementById('infoBox').innerHTML = `<p class='text-center fw-bold text-danger m-0 py-3'>${msg}</p>`;
+    }
+
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const certId = urlParams.get('id');
+        performVerification(certId);
+    };
+</script>
+</body>
+</html>

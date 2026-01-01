@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Repository | Study Center</title>
+    
+    <script src="https://unpkg.com/backendless/dist/backendless.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        :root { 
+            --brand-red: #d32f2f; 
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-main: #333;
+        }
+
+        body { 
+            background: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0; padding: 0;
+            padding-bottom: 150px; 
+        }
+
+        .exam-timer {
+            background: #1a1a1a;
+            color: #FFD700;
+            font-size: 12px;
+            padding: 8px;
+            text-align: center;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .lib-header {
+            background: var(--brand-red);
+            padding: 40px 20px 60px;
+            color: white;
+            text-align: center;
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
+        }
+
+        .search-container {
+            max-width: 600px;
+            margin: -30px auto 0;
+            padding: 0 20px;
+        }
+
+        .search-input {
+            border-radius: 30px;
+            padding: 15px 25px;
+            border: 1px solid #ddd;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            width: 100%;
+            outline: none;
+            background: white;
+        }
+
+        .category-scroll {
+            display: flex; gap: 10px; overflow-x: auto;
+            padding: 20px; scrollbar-width: none;
+        }
+        .category-scroll::-webkit-scrollbar { display: none; }
+
+        .cat-pill {
+            white-space: nowrap; background: var(--card-bg);
+            padding: 8px 22px; border-radius: 20px; font-size: 13px;
+            cursor: pointer; border: 1px solid #ddd;
+            color: var(--text-main);
+            transition: 0.2s; font-weight: 600;
+        }
+        .cat-pill.active { background: var(--brand-red); color: white; border-color: var(--brand-red); box-shadow: 0 4px 10px rgba(211,47,47,0.3); }
+
+        .materials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .material-card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 20px;
+            border-top: 5px solid var(--brand-red);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            min-height: 200px;
+            transition: 0.3s;
+            position: relative;
+        }
+        .material-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+
+        .badge-new {
+            position: absolute; top: 10px; right: 10px;
+            background: #28a745; color: white;
+            font-size: 10px; font-weight: bold;
+            padding: 4px 8px; border-radius: 5px;
+            text-transform: uppercase;
+        }
+
+        .file-icon-circle {
+            width: 45px; height: 45px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; margin-bottom: 12px;
+        }
+        
+        .icon-pdf { background: rgba(211, 47, 47, 0.1); color: #d32f2f; }
+        .icon-video { background: rgba(0, 123, 255, 0.1); color: #007bff; }
+        .icon-assignment { background: rgba(255, 193, 7, 0.1); color: #ffc107; }
+        .icon-gen { background: rgba(108, 117, 125, 0.1); color: #6c757d; }
+
+        .bottom-nav { 
+            position: fixed; bottom: 0; width: 100%; height: 75px; 
+            background: var(--card-bg); display: flex; 
+            justify-content: space-around; align-items: center; 
+            border-top: 1px solid rgba(0,0,0,0.1); z-index: 2000; 
+        }
+        .nav-item { color: #888; text-decoration: none; font-size: 11px; text-align: center; cursor: pointer; flex: 1; }
+        .nav-item.active { color: var(--brand-red); font-weight: bold; }
+
+        /* AD PLACEMENT */
+        .bottom-sticky-ad { 
+            position: fixed; bottom: 75px; left: 50%; transform: translateX(-50%); 
+            z-index: 1999; background: #fff; border-radius: 8px 8px 0 0; 
+            padding: 5px; box-shadow: 0 -4px 10px rgba(0,0,0,0.1); 
+            width: 330px; display: none; flex-direction: column; align-items: center; 
+        }
+        .ad-label { font-size: 8px; color: #999; text-transform: uppercase; margin-bottom: 2px; font-weight: bold; letter-spacing: 1px; }
+    </style>
+</head>
+<body>
+
+    <div class="exam-timer">
+        <i class="fas fa-stopwatch me-2"></i> NEXT EXAM SESSION IN: <span id="countdown">Calculating...</span>
+    </div>
+
+    <div class="lib-header">
+        <h2 class="fw-bold">Academic Repository</h2>
+        <p class="opacity-75 small">Verified Study Materials & Research Papers</p>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="libSearch" class="search-input" placeholder="Search course code or title..." onkeyup="searchLogic()">
+    </div>
+
+    <div class="container mt-3">
+        <div class="category-scroll">
+            <div class="cat-pill active" onclick="filterLevel('General', this)">General</div>
+            <div class="cat-pill" onclick="filterLevel('100', this)">100 Level</div>
+            <div class="cat-pill" onclick="filterLevel('200', this)">200 Level</div>
+            <div class="cat-pill" onclick="filterLevel('300', this)">300 Level</div>
+            <div class="cat-pill" onclick="filterLevel('400', this)">400 Level</div>
+            <div class="cat-pill" onclick="filterLevel('500', this)">500 Level</div>
+        </div>
+
+        <div class="materials-grid" id="materialsContainer">
+            <div class="text-center w-100 p-5">
+                <div class="spinner-border text-danger" role="status"></div>
+                <p class="mt-2 opacity-50">Syncing Academic Database...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-sticky-ad" id="stickyAd">
+        <div class="ad-label">Advertisement</div>
+        <script type="text/javascript">
+            // FIX: Using window context to avoid global conflicts
+            window.atOptions = {
+                'key' : '1521286ac4b3db2eca85e80d1544ba1e',
+                'format' : 'iframe',
+                'height' : 50,
+                'width' : 320,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="https://www.highperformanceformat.com/1521286ac4b3db2eca85e80d1544ba1e/invoke.js"></script>
+    </div>
+
+    <nav class="bottom-nav">
+        <div class="nav-item" onclick="window.location.href='index.html'"><i class="fas fa-university d-block fa-lg mb-1"></i>Portal</div>
+        <div class="nav-item active"><i class="fas fa-book d-block fa-lg mb-1"></i>Library</div>
+        <div class="nav-item" onclick="window.history.back()"><i class="fas fa-chevron-left d-block fa-lg mb-1"></i>Back</div>
+    </nav>
+
+<script>
+    const APP_ID = 'F3BC0BA0-2B86-4D32-8828-DDFED2BD7EAF';
+    const JS_KEY = 'F8C339CE-AB50-4F68-83BD-0A73BF97AEDB';
+    const ACADEMY_URL = "https://naterhubacademy-web.github.io/Nater-Hub-Academy-/";
+
+    // AD PERFORMANCE: DELAY LOAD
+    window.addEventListener("load", () => {
+        setTimeout(() => {
+            const ad = document.getElementById('stickyAd');
+            if(ad) ad.style.display = 'flex';
+        }, 2000);
+    });
+
+    let allMaterials = [];
+    let currentLevel = 'General';
+
+    async function init() {
+        try {
+            Backendless.serverURL = "https://api.backendless.com";
+            Backendless.initApp(APP_ID, JS_KEY);
+            allMaterials = await Backendless.Data.of("Notes").find({ options: { sortBy: ['created DESC'] } });
+            startCountdown();
+            render();
+        } catch (e) { 
+            console.error(e); 
+            Backendless.serverURL = "https://eu-api.backendless.com";
+            Backendless.initApp(APP_ID, JS_KEY);
+            allMaterials = await Backendless.Data.of("Notes").find({ options: { sortBy: ['created DESC'] } });
+            startCountdown();
+            render();
+        }
+    }
+
+    // (Email logic and rendering logic remains unchanged)
+    async function sendLibraryAlert(userEmail, materialTitle, courseCode) {
+        const subject = "📚 New Material Added: " + courseCode;
+        const htmlBody = `
+        <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 20px; overflow: hidden; background-color: #ffffff; color: #333;">
+            <div style="background-color: #0a0a0a; padding: 40px 20px; text-align: center; border-bottom: 5px solid #FFD700;">
+                <h1 style="margin: 0; color: #FFD700; letter-spacing: 5px;">NATER HUB</h1>
+            </div>
+            <div style="padding: 40px; line-height: 1.6;">
+                <h2 style="color: #d32f2f;">New Study Material!</h2>
+                <p>A new resource has been uploaded for <strong>${courseCode}</strong>.</p>
+                <div style="background: #f8f9fa; border: 1px solid #ddd; padding: 15px; border-radius: 10px; margin: 20px 0;">
+                    <p style="margin: 0;"><strong>Title:</strong> ${materialTitle}</p>
+                </div>
+            </div>
+        </div>`;
+        try {
+            await Backendless.Messaging.sendEmail(subject, { htmlmessage: htmlBody }, [userEmail]);
+        } catch (err) { console.error("Library Email failed:", err); }
+    }
+
+    function render(dataOverride = null) {
+        const container = document.getElementById('materialsContainer');
+        const items = dataOverride || allMaterials.filter(item => (item.level || 'General') === currentLevel);
+
+        if (items.length === 0) {
+            container.innerHTML = `<div class="text-center w-100 p-5 opacity-50">No materials indexed for ${currentLevel} Level yet.</div>`;
+            return;
+        }
+
+        const now = new Date().getTime();
+        const oneDay = 24 * 60 * 60 * 1000; 
+
+        container.innerHTML = items.map(item => {
+            const url = (item.fileURL || "").toLowerCase();
+            let icon = "fa-file-alt"; let iconClass = "icon-gen";
+            if (item.type === 'Assignment') { icon = "fa-tasks"; iconClass = "icon-assignment"; }
+            else if (url.endsWith('.pdf') || item.type === 'PDF') { icon = "fa-file-pdf"; iconClass = "icon-pdf"; }
+            else if (url.match(/\.(mp4|mov)$/) || item.type === 'Video') { icon = "fa-video"; iconClass = "icon-video"; }
+
+            const isNew = (now - item.created) < oneDay;
+
+            return `
+                <div class="material-card">
+                    ${isNew ? '<div class="badge-new">New</div>' : ''}
+                    <div class="file-icon-circle ${iconClass}"><i class="fas ${icon}"></i></div>
+                    <h6 class="fw-bold mb-1">${item.title}</h6>
+                    <small class="text-muted d-block mb-3" style="letter-spacing:1px; font-weight:bold;">${item.courseCode || 'GENERAL'}</small>
+                    <div class="mt-auto d-flex justify-content-between align-items-center">
+                        <span class="badge bg-light text-dark fw-normal" style="font-size: 10px; border: 1px solid #eee;">${item.type || 'DOCUMENT'}</span>
+                        <a href="${item.fileURL}" target="_blank" class="btn btn-sm btn-danger px-3 shadow-sm" style="border-radius:8px; font-weight:bold;">VIEW</a>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function filterLevel(lvl, el) {
+        currentLevel = lvl;
+        document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+        el.classList.add('active');
+        render();
+    }
+
+    function searchLogic() {
+        const term = document.getElementById('libSearch').value.toLowerCase();
+        const filtered = allMaterials.filter(m => 
+            (m.title.toLowerCase().includes(term) || 
+            (m.courseCode || "").toLowerCase().includes(term))
+        );
+        render(term === "" ? null : filtered);
+    }
+
+    function startCountdown() {
+        const examDate = new Date("Feb 15, 2026 09:00:00").getTime();
+        setInterval(function() {
+            const now = new Date().getTime();
+            const distance = examDate - now;
+            if (distance < 0) {
+                document.getElementById("countdown").innerHTML = "EXAM IN PROGRESS";
+                return;
+            }
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            document.getElementById("countdown").innerHTML = days + "d " + hours + "h ";
+        }, 1000);
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>

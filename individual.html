@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NATER HUB | Admin Mailer</title>
+    <script src="https://unpkg.com/backendless/dist/backendless.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@900&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { background: #0a0a0a; color: white; font-family: 'Montserrat', sans-serif; padding: 40px 20px; }
+        .mailer-card { 
+            background: #111; border: 2px solid #FFD700; border-radius: 20px; 
+            max-width: 600px; margin: auto; padding: 30px; box-shadow: 0 0 30px rgba(255, 215, 0, 0.1); 
+        }
+        .brand { font-family: 'Cinzel', serif; font-size: 1.8rem; text-align: center; margin-bottom: 30px; }
+        .gold { color: #FFD700; } .red { color: #d32f2f; }
+        input, textarea { 
+            background: #1a1a1a !important; border: 1px solid #333 !important; 
+            color: white !important; margin-bottom: 20px; border-radius: 10px !important;
+        }
+        input:focus, textarea:focus { border-color: #FFD700 !important; box-shadow: none !important; }
+        .btn-send { background: #FFD700; color: black; font-weight: bold; width: 100%; padding: 12px; border-radius: 10px; border: none; }
+        .btn-send:hover { background: #e6c200; }
+        #statusMsg { text-align: center; margin-top: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="mailer-card">
+    <div class="brand"><span class="gold">NATER</span> <span class="red">HUB</span></div>
+    <h5 class="text-center mb-4">INDIVIDUAL STUDENT MAILER</h5>
+
+    <label class="small text-secondary">STUDENT EMAIL</label>
+    <input type="email" id="targetEmail" class="form-control" placeholder="student@example.com">
+
+    <label class="small text-secondary">SUBJECT</label>
+    <input type="text" id="mailSubject" class="form-control" placeholder="Message from NATER HUB">
+
+    <label class="small text-secondary">MESSAGE BODY (HTML ALLOWED)</label>
+    <textarea id="mailBody" class="form-control" rows="6" placeholder="Dear Student, your progress is excellent..."></textarea>
+
+    <button class="btn-send" onclick="sendIndividualMail()">SEND EMAIL NOW</button>
+    <div id="statusMsg"></div>
+</div>
+
+<script>
+    const APP_ID = 'F3BC0BA0-2B86-4D32-8828-DDFED2BD7EAF';
+    const JS_KEY = 'F8C339CE-AB50-4F68-83BD-0A73BF97AEDB';
+    Backendless.initApp(APP_ID, JS_KEY);
+
+    async function sendIndividualMail() {
+        const email = document.getElementById('targetEmail').value;
+        const subject = document.getElementById('mailSubject').value;
+        const message = document.getElementById('mailBody').value;
+        const status = document.getElementById('statusMsg');
+
+        if (!email || !subject || !message) {
+            alert("Please fill all fields!");
+            return;
+        }
+
+        status.innerHTML = "Sending...";
+        status.className = "text-warning";
+
+        // Branded HTML wrapper so your individual emails still look professional
+        const brandedMessage = `
+            <div style="font-family: Arial; border: 1px solid #FFD700; border-radius: 15px; overflow: hidden; max-width: 600px; margin: auto;">
+                <div style="background: #000; padding: 30px; text-align: center;">
+                    <h1 style="color: #FFD700; margin: 0; letter-spacing: 3px;">NATER HUB</h1>
+                </div>
+                <div style="padding: 30px; color: #333; background: #fff; line-height: 1.6;">
+                    ${message}
+                    <br><br>
+                    <hr style="border: 0; border-top: 1px solid #eee;">
+                    <p style="font-size: 12px; color: #888; text-align: center;">
+                        Official Communication from NATER HUB | Premium Academy
+                    </p>
+                </div>
+            </div>
+        `;
+
+        try {
+            await Backendless.Messaging.sendEmail(subject, { htmlmessage: brandedMessage }, [email]);
+            status.innerHTML = "✅ EMAIL SENT SUCCESSFULLY!";
+            status.className = "text-success";
+            
+            // Clear inputs after success
+            document.getElementById('targetEmail').value = "";
+            document.getElementById('mailSubject').value = "";
+            document.getElementById('mailBody').value = "";
+        } catch (e) {
+            status.innerHTML = "❌ ERROR: " + e.message;
+            status.className = "text-danger";
+        }
+    }
+</script>
+
+</body>
+</html>
